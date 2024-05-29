@@ -107,3 +107,5 @@ insert into Ticket (Matricula, ClienteID, PlazaID, FechaEntrada, FechaSalida, Pr
 ('YZA5678', 3, 10, '2024-05-17 12:00:00', '2024-05-17 22:00:00', 10.00),
 ('BCD8901', 4, 9, '2024-05-17 13:00:00', '2024-05-17 21:00:00', 8.00);
 
+select * from coche;
+select * from vehiculo;
