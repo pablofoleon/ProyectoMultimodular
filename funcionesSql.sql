@@ -12,7 +12,7 @@ END //
 DELIMITER ;
 /*
 call agregarVehiculo("YYYY","FORD","FOCUS","VERDE");
-select * from Vehiculo*/
+select * from Vehiculo;*/
 
 -- Procedimineto para agregar un ticket
 DELIMITER //
@@ -76,7 +76,7 @@ WHERE t.FechaSalida IS NULL;
 
 /*SELECT * FROM vehiculosParking;*/
 
--- Vista de los clientes y sus vehivulos
+-- Vista de los clientes y sus vehiculos
 DROP VIEW IF EXISTS vehiculosClientes;
 CREATE VIEW vehiculosClientes AS
 SELECT c.ClienteID, c.Nombre, c.Apellido, c.Telefono, c.Email, v.Matricula, v.Marca, v.Modelo, v.Color
