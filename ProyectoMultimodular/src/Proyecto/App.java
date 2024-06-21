@@ -3,6 +3,7 @@ package Proyecto;
 import java.sql.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -11,6 +12,11 @@ import java.util.*;
 public class App {
 	
 	public static void main(String[] args) {
+		
+		// Lista para almacenar los vehículos en el garaje
+				List<Vehiculo> vehiculosGaraje = new ArrayList<>();
+				// Lista para almacenar los clientes
+				List<Cliente> clientes = new ArrayList<>();
 		Scanner scanner = new Scanner(System.in);
 		boolean salir = false;
 			Connection conexion = obtenerConexion();
@@ -27,7 +33,9 @@ public class App {
 				                System.out.println("*  7. Encontrar vehiculo por matrícula         *");
 				                System.out.println("*  8. Consultar plaza                          *");
 				                System.out.println("*  9. Mostrar todos del garaje                 *");
-				                System.out.println("*  10. Salir                                   *");
+				                System.out.println("*  10. Listar todos los clientes               *");
+				    			System.out.println("*  11. Filtrar vehículos por marca             *");
+				    			System.out.println("*  12. Salir                                   *");
 				                System.out.println("************************************************");
 				                System.out.print("Ingrese su opción: ");
 				                
@@ -35,11 +43,11 @@ public class App {
 
 				                switch (opcion) {
 				                    case 0:
-				                    	registrarCliente(conexion,scanner);
+				                    	registrarCliente(conexion,scanner,clientes);
 				                    	 
 				                        break;
 				                    case 1:
-				                    	borrarCliente(conexion,scanner);
+				                    	borrarCliente(conexion,scanner,clientes);
 				                    	break;
 				                    case 2:
 				                    	registrarVehiculo(conexion,scanner);
@@ -55,6 +63,7 @@ public class App {
 				                    	break;
 				                    case 6:
 				                    	TicketDAO.modificarTicket(conexion,scanner);
+				                    	scanner.nextLine();
 				                    	break;
 				                    case 7:
 				                    	buscarVehiculoMatricula(conexion,scanner);
@@ -63,19 +72,25 @@ public class App {
 				                    	consultarPlaza(conexion,scanner);
 				                    	break;
 				                    case 9:
-				                    	mostrarVehiculosGaraje(conexion);
+				                    	mostrarVehiculosGaraje(conexion,vehiculosGaraje);
 				                    	break;
 				                    case 10:
-				                        salir = true;
-				                        System.out.println("**************************************");
-				                        System.out.println("*                                    *");
-				                        System.out.println("*        PROGRAMA FINALIZADO         *");
-				                        System.out.println("*                                    *");
-				                        System.out.println("**************************************");
-				                        break;
-				                    default:
-				                        System.out.println("Opción no válida.");
-				                        break;
+				    					listarTodosLosClientes(clientes);
+				    					break;
+				    				case 11:
+				    					filtrarVehiculosPorMarca(vehiculosGaraje, scanner);
+				    					break;
+				    				case 12:
+				    					salir = true;
+				    					System.out.println("**************************************");
+				    					System.out.println("*                                    *");
+				    					System.out.println("*        PROGRAMA FINALIZADO         *");
+				    					System.out.println("*                                    *");
+				    					System.out.println("**************************************");
+				    					break;
+				    				default:
+				    					System.out.println("Opción no válida.");
+				    					break;
 				                }
 							}
 			cerrarConexion(conexion);
@@ -121,77 +136,69 @@ public class App {
      * @param conexion La conexión a la base de datos.
      * @param scanner El objeto Scanner para entrada de usuario.
      */
-	public static void registrarCliente(Connection conexion,Scanner scanner) {
-	    String sql = "INSERT INTO Cliente (Nombre, Apellido, Telefono, Email) VALUES (?, ?, ?, ?)";
-	    scanner.nextLine();
-	    System.out.println("Nombre: ");
-	    String nombre = scanner.nextLine();
-	    System.out.println("Apellido: ");
-	    String apellido = scanner.nextLine();
-	    System.out.println("Telefono: ");
-	    String telefono = scanner.nextLine();
-	    System.out.println("email: ");
-	    String email = scanner.nextLine();
+	public static void registrarCliente(Connection conexion,Scanner scanner,List<Cliente> clientes) {
+		scanner.nextLine(); // Limpiar buffer
+        System.out.print("Ingrese el nombre del cliente: ");
+        String nombre = scanner.nextLine();
+        System.out.print("Ingrese el apellido del cliente: ");
+        String apellido = scanner.nextLine();
+        System.out.print("Ingrese el teléfono del cliente: ");
+        String telefono = scanner.nextLine();
+        System.out.print("Ingrese el email del cliente: ");
+        String email = scanner.nextLine();
 
-	    try {
-	        PreparedStatement pstmt = conexion.prepareStatement(sql);
-	        
-	        pstmt.setString(1, nombre);
-	        pstmt.setString(2, apellido);
-	        pstmt.setString(3, telefono);
-	        pstmt.setString(4, email);
+        Cliente cliente = new Cliente(nombre, apellido, telefono, email);
+        clientes.add(cliente);
 
-	        
-	        int filasAfectadas = pstmt.executeUpdate();
-
-	        if (filasAfectadas > 0) {
-	            System.out.println("Cliente registrado correctamente.");
-	        } else {
-	            System.out.println("No se pudo registrar el cliente.");
-	        }
-	    } catch (SQLException e) {
-	        System.err.println("Error al ejecutar la consulta SQL: " + e.getMessage());
-	    }
+        // Registrar en la base de datos
+        try {
+            String sql = "INSERT INTO Cliente (nombre, apellido, telefono, email) VALUES (?, ?, ?, ?)";
+            PreparedStatement pstmt = conexion.prepareStatement(sql);
+            pstmt.setString(1, cliente.getNombre());
+            pstmt.setString(2, cliente.getApellido());
+            pstmt.setString(3, cliente.getTelefono());
+            pstmt.setString(4, cliente.getEmail());
+            pstmt.executeUpdate();
+            System.out.println("Cliente registrado exitosamente.");
+        } catch (SQLException e) {
+            System.out.println("Error al registrar cliente: " + e.getMessage());
+        }
 	}
 	
 	
 	 /**
      * Borra un cliente de la base de datos junto con sus tickets asociados.
      * @param conexion La conexión a la base de datos.
-     * @param scanner El objeto Scanner para entrada de usuario.
      */
-	public static void borrarCliente(Connection conexion, Scanner scanner) {
-	    scanner.nextLine();
-	    System.out.println("Nombre: ");
-	    String nombre = scanner.nextLine();
-	    System.out.println("Apellido: ");
-	    String apellido = scanner.nextLine();
-	    
-	    String sqlDeleteTickets = "DELETE FROM Ticket WHERE ClienteID IN (SELECT ClienteID FROM Cliente WHERE Nombre = ? AND Apellido = ?)";
-	    String sqlDeleteCliente = "DELETE FROM Cliente WHERE Nombre = ? AND Apellido = ?";
-	    
-	    try {
-	        // Eliminar los tickets asociados al cliente
-	        PreparedStatement pstmtDeleteTickets = conexion.prepareStatement(sqlDeleteTickets);
-	        pstmtDeleteTickets.setString(1, nombre);
-	        pstmtDeleteTickets.setString(2, apellido);
+	public static void borrarCliente(Connection conexion, Scanner scanner,List<Cliente> clientes) {
+		 scanner.nextLine(); // Limpiar buffer
+	        System.out.print("Ingrese el email del cliente a borrar: ");
+	        String email = scanner.nextLine();
 
-	        // Eliminar al cliente
-	        PreparedStatement pstmtDeleteCliente = conexion.prepareStatement(sqlDeleteCliente);
-	        pstmtDeleteCliente.setString(1, nombre);
-	        pstmtDeleteCliente.setString(2, apellido);
-	        int filasAfectadasCliente = pstmtDeleteCliente.executeUpdate();
+	        Cliente cliente = clientes.stream()
+	                .filter(c -> c.getEmail().equals(email))
+	                .findFirst()
+	                .orElse(null);
 
-	        // Verificar si se borró el cliente correctamente
-	        if (filasAfectadasCliente > 0) {
-	            System.out.println("Cliente borrado correctamente.");
+	        if (cliente != null) {
+	            clientes.remove(cliente);
+
+	            // Borrar de la base de datos
+	            try {
+	                String sql = "DELETE FROM clientes WHERE email = ?";
+	                PreparedStatement pstmt = conexion.prepareStatement(sql);
+	                pstmt.setString(1, email);
+	                pstmt.executeUpdate();
+	                System.out.println("Cliente borrado exitosamente.");
+	            } catch (SQLException e) {
+	                System.out.println("Error al borrar cliente: " + e.getMessage());
+	            }
 	        } else {
-	            System.out.println("No se encontró ningún cliente con ese nombre y apellidos.");
+	            System.out.println("Cliente no encontrado.");
 	        }
-	    } catch (SQLException e) {
-	        System.err.println("Error al ejecutar la consulta SQL: " + e.getMessage());
 	    }
-	}
+
+	
 
 	
 	 /**
@@ -417,37 +424,69 @@ public class App {
      * Muestra todos los vehículos presentes en el garaje.
      * @param conexion La conexión a la base de datos.
      */
-	public static void mostrarVehiculosGaraje(Connection conexion) {
-	    String sql = "SELECT p.Ubicacion, v.Modelo, t.Matricula, c.Nombre, c.Apellido " +
-	                 "FROM Plaza p " +
-	                 "JOIN Ticket t ON p.PlazaID = t.PlazaID " +
-	                 "JOIN Vehiculo v ON t.Matricula = v.Matricula " +
-	                 "JOIN Cliente c ON t.ClienteID = c.ClienteID " +
-	                 "WHERE t.FechaSalida IS NULL";
+	public static void mostrarVehiculosGaraje(Connection conexion, List<Vehiculo> vehiculosGaraje) {
+		String sql = "SELECT * FROM Vehiculo";
+	    
+	    try {
+	        Statement stmt = conexion.createStatement();
+	        ResultSet rs = stmt.executeQuery(sql);
+	        
+	        vehiculosGaraje.clear(); // Limpiar la lista antes de agregar nuevos vehículos
 
-	    try (Statement stmt = conexion.createStatement();
-	         ResultSet rs = stmt.executeQuery(sql)) {
-	        System.out.println("Vehículos en el garaje:");
-	        System.out.println("------------------------------------------------------------------------------------------------------------------");
-	        System.out.printf("%-15s %-20s %-10s %-15s %-15s%n", "Ubicación Plaza", "Modelo", "Matrícula", "Nombre Cliente", "Apellido Cliente");
-	        System.out.println("------------------------------------------------------------------------------------------------------------------");
 	        while (rs.next()) {
-	            String ubicacion = rs.getString("Ubicacion");
-	            String modelo = rs.getString("Modelo");
 	            String matricula = rs.getString("Matricula");
-	            String nombreCliente = rs.getString("Nombre");
-	            String apellidoCliente = rs.getString("Apellido");
-
-	            System.out.printf("%-15s %-20s %-10s %-15s %-15s%n", ubicacion, modelo, matricula, nombreCliente, apellidoCliente);
+	            String marca = rs.getString("Marca");
+	            String modelo = rs.getString("Modelo");
+	            String color = rs.getString("Color");
+	            
+	            Vehiculo vehiculo = new Vehiculo(matricula, marca, modelo, color);
+	            vehiculosGaraje.add(vehiculo);
 	        }
-	        System.out.println("------------------------------------------------------------------------------------------------------------------");
+	        
+	        // Stream mostrar todos los vehiculos
+	        vehiculosGaraje.stream()
+	            .forEach(vehiculo -> System.out.println(vehiculo));
+
 	    } catch (SQLException e) {
-	        System.err.println("Error al listar los vehículos en el garaje: " + e.getMessage());
+	        System.err.println("Error al ejecutar la consulta SQL: " + e.getMessage());
 	    }
 	}
 
+	/**
+     * Lista todos los clientes usando Streams.
+     * @param clientes La lista de clientes.
+     */
+	public static void listarTodosLosClientes(List<Cliente> clientes) {
+		if (clientes.isEmpty()) {
+	        System.out.println("No hay clientes registrados.");
+	    } else {
+	        System.out.println("Listado de todos los clientes:");
+	        for (Cliente cliente : clientes) {
+	            System.out.println(cliente.toString());
+	            System.out.println("----------------------------------------");
+	        }
+	    }
+	}
 
+	/**
+     * Filtra los vehículos por marca usando Streams.
+     * @param vehiculosGaraje La lista de vehículos en el garaje.
+     */
+	public static void filtrarVehiculosPorMarca(List<Vehiculo> vehiculosGaraje, Scanner scanner) {
+		scanner.nextLine(); // Limpiar el buffer de entrada
+	    System.out.println("Introduce la marca de los vehículos a filtrar: ");
+	    String marca = scanner.nextLine().trim(); // Leer la marca y eliminar espacios en blanco
 
+	    List<Vehiculo> vehiculosFiltrados = vehiculosGaraje.stream()
+	            .filter(v -> v.getMarca().equalsIgnoreCase(marca))
+	            .collect(Collectors.toList());
 
+	    if (!vehiculosFiltrados.isEmpty()) {
+	        System.out.println("Vehículos encontrados de la marca " + marca + ":");
+	        vehiculosFiltrados.forEach(System.out::println);
+	    } else {
+	        System.out.println("No se encontraron vehículos de la marca " + marca);
+	    }
+	}
 
 }

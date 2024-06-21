@@ -1,6 +1,26 @@
 Proyecto para la gestión de un parking.
 
 
+*********************************************
+    AÑADIDO NUEVO
+
+
+Añadido Arraylist de coches y clientes
+
+Añadidos metodos:
+    mostrarVehiculos
+    listarTodosLosClientes (al tener algunos clientes ya cargados desde la bd, no están en el array, se añaden los nuevos)
+    filtrarVehiculosPorMarca
+
+Añadido clase Cliente
+
+Métodos modificados 
+
+    borrarCliente 
+    registrarCliente
+*********************************************
+
+
 En java:
 
 Clase App:
